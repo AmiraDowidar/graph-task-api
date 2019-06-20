@@ -1,0 +1,60 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
+parameters:
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/*'
+        exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
+
+    # controllers are imported separately to make sure services can be injected
+    # as action arguments even if you don't extend any base controller class
+    App\Controller\:
+        resource: '../src/Controller'
+        tags: ['controller.service_arguments']
+
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+    App\Service\ShortestPathService\DijkstraFinder: ~
+    App\Service\ShortestPathService\BFSFinder: ~
+
+    # the ``App\Util\UppercaseTransformer`` service will be
+    # injected when an ``App\Util\TransformerInterface``
+    # type-hint for a ``$shoutyTransformer`` argument is detected.
+    App\Service\ShortestPathService\SPFinderInterface $finder: '@App\Service\ShortestPathService\DijkstraFinder'
+
+    # If the argument used for injection does not match, but the
+    # type-hint still matches, the ``App\Util\Rot13Transformer``
+    # service will be injected.
+    App\Service\ShortestPathService\SPFinderInterface $bfs: '@App\Service\ShortestPathService\BFSFinder'
+
+    # finder:
+    #     alias: App\Service\ShortestPathService\SPFinderInterface
+    #     public: true
+    seeder:
+        class: App\Service\SeedTest\SeedService
+        arguments: ['@doctrine.orm.entity_manager']
+        public: true
+    # seeder:
+    #     alias: App\Service\SeedTest\SeedService
+    #     public: true
+
+
+    shortest_path:
+        class: App\Controller\ShortestPathController
+        autowire: true
+        arguments:
+            - '@seeder'
+            # - '@$finder'
